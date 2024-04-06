@@ -29,15 +29,11 @@
     </style>
 </head>
 <body>
-    <label for="seed">Enter seed:</label>
-    <input type="text" id="seed" name="seed">
-    <button onclick="startGame()">Start Game</button>
     <div id="game-container"></div>
     <script>
         // JavaScript code
-        let boardSize;
-        let numBombs;
-        let seed;
+        let boardSize = 10;
+        let numBombs = 10;
 
         let board = [];
         let bombs = [];
@@ -61,13 +57,7 @@
             renderBoard();
         }
 
-        function startGame() {
-            seed = document.getElementById("seed").value;
-            initializeBoard();
-        }
-
         function placeBombs() {
-            Math.seedrandom(seed);
             let bombCount = 0;
             while (bombCount < numBombs) {
                 const x = Math.floor(Math.random() * boardSize);
@@ -183,7 +173,9 @@
                 alert("Congratulations! You win!");
             }
         }
+
+        // Initialize the game
+        initializeBoard();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 </body>
 </html>
