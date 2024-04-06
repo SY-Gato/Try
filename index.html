@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper</title>
+    <style>
+        /* CSS styles */
+        .cell {
+            width: 20px;
+            height: 20px;
+            border: 1px solid black;
+            display: inline-block;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        .hidden {
+            background-color: #ccc;
+        }
+
+        .flagged {
+            background-color: yellow;
+        }
+
+        .bomb {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <label for="seed">Enter seed:</label>
+    <input type="text" id="seed" name="seed">
+    <button onclick="startGame()">Start Game</button>
+    <div id="game-container"></div>
+    <script>
+        // JavaScript code
+        let boardSize;
+        let numBombs;
+        let seed;
+
+        let board = [];
+        let bombs = [];
+
+        function initializeBoard() {
+            board = [];
+            bombs = [];
+            for (let i = 0; i < boardSize; i++) {
+                board[i] = [];
+                for (let j = 0; j < boardSize; j++) {
+                    board[i][j] = {
+                        isBomb: false,
+                        isRevealed: false,
+                        isFlagged: false,
+                        surroundingBombs: 0
+                    };
+                }
+            }
+            placeBombs();
+            calculateSurroundingBombs();
+            renderBoard();
+        }
+
+        function startGame() {
+            seed = document.getElementById("seed").value;
+            initializeBoard();
+        }
+
+        function placeBombs() {
+            Math.seedrandom(seed);
+            let bombCount = 0;
+            while (bombCount < numBombs) {
+                const x = Math.floor(Math.random() * boardSize);
+                const y = Math.floor(Math.random() * boardSize);
+                if (!board[x][y].isBomb) {
+                    board[x][y].isBomb = true;
+                    bombs.push({ x, y });
+                    bombCount++;
+                }
+            }
+        }
+
+        function calculateSurroundingBombs() {
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (!board[i][j].isBomb) {
+                        let count = 0;
+                        for (let dx = -1; dx <= 1; dx++) {
+                            for (let dy = -1; dy <= 1; dy++) {
+                                const nx = i + dx;
+                                const ny = j + dy;
+                                if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize && board[nx][ny].isBomb) {
+                                    count++;
+                                }
+                            }
+                        }
+                        board[i][j].surroundingBombs = count;
+                    }
+                }
+            }
+        }
+
+        function renderBoard() {
+            const gameContainer = document.getElementById("game-container");
+            gameContainer.innerHTML = "";
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell", "hidden");
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener("click", handleCellClick);
+                    cell.addEventListener("contextmenu", handleCellRightClick);
+                    gameContainer.appendChild(cell);
+                }
+                gameContainer.appendChild(document.createElement("br"));
+            }
+        }
+
+        function handleCellClick(event) {
+            const row = parseInt(event.target.dataset.row);
+            const col = parseInt(event.target.dataset.col);
+            if (board[row][col].isFlagged) return;
+
+            if (board[row][col].isBomb) {
+                revealBombs();
+                alert("Game Over!");
+            } else {
+                revealEmptyCells(row, col);
+                checkWin();
+            }
+        }
+
+        function handleCellRightClick(event) {
+            event.preventDefault();
+            const row = parseInt(event.target.dataset.row);
+            const col = parseInt(event.target.dataset.col);
+            if (!board[row][col].isRevealed) {
+                board[row][col].isFlagged = !board[row][col].isFlagged;
+                event.target.classList.toggle("flagged");
+            }
+        }
+
+        function revealEmptyCells(row, col) {
+            if (row < 0 || row >= boardSize || col < 0 || col >= boardSize || board[row][col].isRevealed) return;
+            if (board[row][col].isBomb || board[row][col].isFlagged) return;
+            
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            if (board[row][col].surroundingBombs > 0) {
+                board[row][col].isRevealed = true;
+                cell.classList.remove("hidden");
+                cell.textContent = board[row][col].surroundingBombs;
+                return;
+            }
+
+            board[row][col].isRevealed = true;
+            cell.classList.remove("hidden");
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    revealEmptyCells(row + dx, col + dy);
+                }
+            }
+        }
+
+        function revealBombs() {
+            bombs.forEach(bomb => {
+                const cell = document.querySelector(`.cell[data-row="${bomb.x}"][data-col="${bomb.y}"]`);
+                cell.classList.remove("hidden");
+                cell.classList.add("bomb");
+            });
+        }
+
+        function checkWin() {
+            let remainingCells = boardSize * boardSize - numBombs;
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j].isRevealed || board[i][j].isFlagged) {
+                        remainingCells--;
+                    }
+                }
+            }
+            if (remainingCells === 0) {
+                alert("Congratulations! You win!");
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+</body>
+</html>
