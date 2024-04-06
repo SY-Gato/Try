@@ -26,6 +26,8 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
             gap: 1px;
+            width: fit-content;
+            max-width: 100%;
         }
 
         .cell {
@@ -34,14 +36,12 @@
             text-align: center;
             line-height: 30px;
             font-size: 14px;
+            width: 30px;
+            height: 30px;
         }
 
         .mine {
             background-color: red;
-        }
-
-        .revealed {
-            background-color: #fff;
         }
     </style>
 </head>
