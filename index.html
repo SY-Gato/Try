@@ -6,6 +6,16 @@
     <title>Minesweeper</title>
     <style>
         /* CSS styles */
+        body {
+            margin: 20px;
+        }
+
+        #game-container {
+            padding: 10px;
+            border: 1px solid #000;
+            display: inline-block;
+        }
+
         .cell {
             width: 20px;
             height: 20px;
@@ -37,8 +47,9 @@
 
         let board = [];
         let bombs = [];
+        let isFirstClick = true;
 
-        function initializeBoard() {
+        function initializeBoard(row, col) {
             board = [];
             bombs = [];
             for (let i = 0; i < boardSize; i++) {
@@ -52,17 +63,17 @@
                     };
                 }
             }
-            placeBombs();
+            placeBombs(row, col);
             calculateSurroundingBombs();
             renderBoard();
         }
 
-        function placeBombs() {
+        function placeBombs(firstRow, firstCol) {
             let bombCount = 0;
             while (bombCount < numBombs) {
                 const x = Math.floor(Math.random() * boardSize);
                 const y = Math.floor(Math.random() * boardSize);
-                if (!board[x][y].isBomb) {
+                if (!board[x][y].isBomb && (x !== firstRow || y !== firstCol)) {
                     board[x][y].isBomb = true;
                     bombs.push({ x, y });
                     bombCount++;
@@ -108,15 +119,21 @@
         }
 
         function handleCellClick(event) {
+            if (isFirstClick) {
+                const row = parseInt(event.target.dataset.row);
+                const col = parseInt(event.target.dataset.col);
+                initializeBoard(row, col);
+                isFirstClick = false;
+            }
             const row = parseInt(event.target.dataset.row);
             const col = parseInt(event.target.dataset.col);
-            if (board[row][col].isFlagged) return;
+            if (board[row][col].isFlagged || board[row][col].isRevealed) return;
 
             if (board[row][col].isBomb) {
                 revealBombs();
                 alert("Game Over!");
             } else {
-                revealEmptyCells(row, col);
+                revealCell(row, col);
                 checkWin();
             }
         }
@@ -131,24 +148,23 @@
             }
         }
 
-        function revealEmptyCells(row, col) {
-            if (row < 0 || row >= boardSize || col < 0 || col >= boardSize || board[row][col].isRevealed) return;
-            if (board[row][col].isBomb || board[row][col].isFlagged) return;
-            
+        function revealCell(row, col) {
+            if (board[row][col].isRevealed || board[row][col].isFlagged) return;
             const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-            if (board[row][col].surroundingBombs > 0) {
-                board[row][col].isRevealed = true;
-                cell.classList.remove("hidden");
-                cell.textContent = board[row][col].surroundingBombs;
-                return;
-            }
-
             board[row][col].isRevealed = true;
             cell.classList.remove("hidden");
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dy = -1; dy <= 1; dy++) {
-                    revealEmptyCells(row + dx, col + dy);
+            if (board[row][col].surroundingBombs === 0) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const nx = row + dx;
+                        const ny = col + dy;
+                        if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                            revealCell(nx, ny);
+                        }
+                    }
                 }
+            } else {
+                cell.textContent = board[row][col].surroundingBombs;
             }
         }
 
@@ -173,9 +189,6 @@
                 alert("Congratulations! You win!");
             }
         }
-
-        // Initialize the game
-        initializeBoard();
     </script>
 </body>
 </html>
